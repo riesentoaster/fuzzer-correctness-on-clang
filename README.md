@@ -12,7 +12,7 @@ I have tested this on Ubuntu 22.04.5. You will probably need some additional dep
 - clang
 - git
 
-This will download and patch clang, then build it along with the fuzzer, and finally run the fuzzer. Check the [Justfile](./Justfile) for what exactly happens. To change the version of clang, change the variable at the top of [`Justfile`](./Justfile)
+This will download and patch clang, then build it along with the fuzzer, and finally run the fuzzer. Check the [Justfile](./Justfile) for what exactly happens.
 
 ## Configure
 
