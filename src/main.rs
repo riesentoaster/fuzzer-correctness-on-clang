@@ -23,7 +23,6 @@ use libafl::{
     },
     fuzzer::{Evaluator, Fuzzer},
     monitors::{MultiMonitor, OnDiskJsonMonitor},
-    mutators::{havoc_mutations, HavocScheduledMutator, NopMutator},
     observers::{
         CanTrack, HitcountsMapObserver, StdErrObserver, StdMapObserver, StdOutObserver,
         TimeObserver,
@@ -44,8 +43,8 @@ use libafl_bolts::{
 use observer::CorrectnessObserver;
 
 use crate::{
-    config::{nautilus::NautilusUnparsingExecutor, FuzzerConfig},
-    executor::{get_coverage_shmem_size, get_executor},
+    config::{seeds::ValidCorpusSeedsConfig, FuzzerConfig},
+    executor::get_coverage_shmem_size,
     feedback::ReportCorrectnessFeedback,
 };
 
@@ -56,9 +55,9 @@ fn timeout_from_millis_str(time: &str) -> Result<Duration, Error> {
 
 #[derive(Debug, Parser)]
 #[command(
-    name = "libafl_nautilus_fuzzer",
-    about = "Fuzz things with libafl_nautilus",
-    author = "Andrea Fioraldi <andreafioraldi@gmail.com>, Valentin Huber <contact@valentinhuber.me>"
+    name = "fuzzer_correctness_on_clang",
+    about = "Compare the correctness of inputs produced by different fuzzing approaches on clang",
+    author = "Valentin Huber <contact@valentinhuber.me>"
 )]
 pub struct Opt {
     #[arg(
@@ -93,14 +92,6 @@ pub struct Opt {
     output: PathBuf,
 
     #[arg(
-        short,
-        long,
-        help = "Convert a stored testcase to JavaScript text",
-        name = "REPRO"
-    )]
-    repro: Option<PathBuf>,
-
-    #[arg(
         value_parser = timeout_from_millis_str,
         short,
         long,
@@ -117,7 +108,7 @@ pub struct Opt {
     stderr_file: Option<PathBuf>,
 
     #[arg(short, long, help = "Set the grammar file", name = "GRAMMAR_FILE")]
-    grammar_file: PathBuf,
+    grammar_file_prefix: String,
 }
 
 static TARGET_BINARY: &str = "./llvm/build/bin/clang";
@@ -125,50 +116,15 @@ static TARGET_BINARY: &str = "./llvm/build/bin/clang";
 const NUM_GENERATED: usize = 4096;
 const CORPUS_CACHE: usize = 4096;
 
-type CurrentConfig = config::FandangoConfig;
-/// The main fn, `no_mangle` as it is a C symbol
-// #[no_mangle]
+type CurrentConfig = config::FandangoConfig<ValidCorpusSeedsConfig>;
+
 #[allow(clippy::too_many_lines)]
 pub fn main() {
-    // Registry the metadata types used in this fuzzer
-    // Needed only on no_std
-    //RegistryBuilder::register::<Tokens>();
     let opt = Opt::parse();
 
     let mut initial_dir = opt.output.clone();
     initial_dir.push("initial");
     fs::create_dir_all(&initial_dir).unwrap();
-
-    // if let Some(repro) = opt.repro {
-    //     for i in 0..NUM_GENERATED {
-    //         let mut file =
-    //             fs::File::open(initial_dir.join(format!("id_{i}"))).expect("no file found");
-    //         let mut buffer = vec![];
-    //         file.read_to_end(&mut buffer).expect("buffer overflow");
-
-    //         std::mem::drop(
-    //             encoder_decoder
-    //                 .encode(&buffer, &mut tokenizer)
-    //                 .expect("encoding failed"),
-    //         );
-    //     }
-
-    //     let input = EncodedInput::from_file(repro).unwrap();
-
-    //     let args: Vec<String> = env::args().collect();
-    //     if unsafe { libfuzzer_initialize(&args) } == -1 {
-    //         println!("Warning: LLVMFuzzerInitialize failed with -1");
-    //     }
-
-    //     let mut bytes = vec![];
-    //     encoder_decoder.decode(&input, &mut bytes).unwrap();
-    //     unsafe {
-    //         println!("{}", std::str::from_utf8_unchecked(&bytes));
-    //     }
-    //     unsafe { libfuzzer_test_one_input(&bytes) };
-
-    //     return;
-    // }
 
     println!(
         "Workdir: {:?}",
@@ -291,7 +247,8 @@ pub fn main() {
         //     opt.timeout,
         // )?;
 
-        let mut executor = get_executor(
+        let mut executor = CurrentConfig::get_executor(
+            &mut init,
             stdout_observer,
             stderr_observer,
             tuple_list!(edges_observer, time_observer, correctness_observer),

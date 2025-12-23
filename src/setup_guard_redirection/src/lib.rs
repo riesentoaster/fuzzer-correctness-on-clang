@@ -8,7 +8,6 @@ use std::{
     io::Write,
     mem::{size_of, transmute_copy},
     panic::{catch_unwind, AssertUnwindSafe},
-    ptr::null,
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -56,7 +55,7 @@ pub type LibcStartMainFunc = fn(
 static mut SHMEM_DESCRIPTION: Option<ShMemDescription> = None;
 static mut RTLD_FINI: Option<extern "C" fn()> = None;
 
-unsafe fn extract_shmem_description(argc: &mut i32, argv: *mut *const char) {
+unsafe fn extract_shmem_description(_argc: &mut i32, _argv: *mut *const char) {
     let shmem_description_string = match std::env::var("SHMEM_DESCRIPTION") {
         Ok(s) => s,
         Err(e) => {
@@ -140,7 +139,7 @@ unsafe fn write_guards() {
         }
     }));
 
-    if let Err(e) = result {
+    if let Err(_e) = result {
         // log(if let Some(msg) = e.downcast_ref::<&'static str>() {
         //     msg.to_string()
         // } else if let Some(msg) = e.downcast_ref::<String>() {

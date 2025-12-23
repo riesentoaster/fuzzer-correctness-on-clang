@@ -20,22 +20,21 @@ use libafl_bolts::{
 
 use crate::TARGET_BINARY;
 
+pub type GenericExecutor<I, OT, S> = CommandExecutor<
+    Child,
+    (),
+    I,
+    merge_tuple_list_type!(tuple_list_type!(StdOutObserver, StdErrObserver), OT),
+    S,
+    StdCommandConfigurator,
+>;
+
 pub fn get_executor<I: HasTargetBytes, OT: ObserversTuple<I, S>, S>(
     stdout_observer: StdOutObserver,
     stderr_observer: StdErrObserver,
     observers: OT,
     shmem_description: ShMemDescription,
-) -> Result<
-    CommandExecutor<
-        Child,
-        (),
-        I,
-        merge_tuple_list_type!(tuple_list_type!(StdOutObserver, StdErrObserver), OT),
-        S,
-        StdCommandConfigurator,
-    >,
-    Error,
-> {
+) -> Result<GenericExecutor<I, OT, S>, Error> {
     let shmem_description_string = serde_json::to_string(&shmem_description).unwrap();
 
     let stdout = stdout_observer.handle();

@@ -2,17 +2,12 @@
 
 ## Build and Run
 
-Install [cargo](https://rustup.rs), then just (`cargo install just`), then execute the following (this may take a minute — clang is a rather complex binary to build):
+Check out the [`Dockerfile`](./Dockerfile) for installation and usage instructions. To build and run:
 
+```bash
+docker build -t fuzzer-correctness .
+docker run --rm fuzzer-correctness
 ```
-just run
-```
-
-I have tested this on Ubuntu 22.04.5. You will probably need some additional dependencies, at least:
-- clang
-- git
-
-This will download and patch clang, then build it along with the fuzzer, and finally run the fuzzer. Check the [Justfile](./Justfile) for what exactly happens.
 
 ## Configure
 

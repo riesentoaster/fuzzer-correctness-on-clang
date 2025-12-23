@@ -1,4 +1,4 @@
-use std::{fs, io::Write as _, num::NonZero};
+use std::{fs, marker::PhantomData, num::NonZero};
 
 use libafl::{
     executors::{Executor, HasObservers},
@@ -17,16 +17,20 @@ use libafl::{
     schedulers::{IndexesLenTimeMinimizerScheduler, QueueScheduler},
     stages::mutational::DEFAULT_MUTATIONAL_MAX_ITERATIONS,
     state::NopState,
+    Error,
 };
 use libafl_bolts::tuples::{tuple_list_type, RefIndexable};
 
 use crate::{
-    config::{read_corpus, FuzzerConfig},
+    config::{seeds::SeedsConfig, FuzzerConfig},
+    executor::{get_executor, GenericExecutor},
     Opt, NUM_GENERATED,
 };
 
-pub struct NautilusConfig;
+#[allow(unused)]
+pub struct NautilusConfig<Seeds: SeedsConfig>(PhantomData<Seeds>);
 
+#[allow(unused)]
 type EncodedMutations = tuple_list_type!(
     EncodedRandMutator,
     EncodedIncMutator,
@@ -39,13 +43,14 @@ type EncodedMutations = tuple_list_type!(
     EncodedCrossoverReplaceMutator,
 );
 
+#[allow(unused)]
 type SchedulerObserver<'a> = libafl::observers::ExplicitTracking<
     libafl::observers::HitcountsMapObserver<libafl::observers::StdMapObserver<'a, u8, false>>,
     true,
     false,
 >;
 
-impl FuzzerConfig for NautilusConfig {
+impl<Seeds: SeedsConfig> FuzzerConfig<Seeds> for NautilusConfig<Seeds> {
     type Mutator = HavocScheduledMutator<EncodedMutations>;
 
     fn mutator(_opt: &crate::Opt) -> Self::Mutator {
@@ -76,32 +81,33 @@ impl FuzzerConfig for NautilusConfig {
         initial_dir.push("initial");
         fs::create_dir_all(&initial_dir).unwrap();
 
-        let context = NautilusContext::from_file(256, opt.grammar_file.clone()).unwrap();
+        let context =
+            NautilusContext::from_file(256, format!("{}.json", opt.grammar_file_prefix)).unwrap();
         let mut tokenizer = NaiveTokenizer::default();
         let mut initial_inputs = vec![];
         let mut generator = NautilusGenerator::new(&context);
 
         let mut bytes = vec![];
-        for i in 0..NUM_GENERATED {
+        for _i in 0..NUM_GENERATED {
             let nautilus = generator
                 .generate(&mut NopState::<NautilusInput>::new())
                 .unwrap();
             nautilus.unparse(&context, &mut bytes);
 
-            let mut file = fs::File::create(initial_dir.join(format!("id_{i}"))).unwrap();
-            file.write_all(&bytes).unwrap();
+            // let mut file = fs::File::create(initial_dir.join(format!("id_{i}"))).unwrap();
+            // file.write_all(&bytes).unwrap();
 
             let input = encoder_decoder
                 .encode(&bytes, &mut tokenizer)
                 .expect("encoding failed");
             initial_inputs.push(input);
         }
-        // initial_inputs.extend_from_slice(
-        //     &read_corpus()
-        //         .iter()
-        //         .flat_map(|x| encoder_decoder.encode(x, &mut tokenizer))
-        //         .collect::<Vec<_>>(),
-        // );
+        initial_inputs.extend_from_slice(
+            &Seeds::get_seeds()
+                .iter()
+                .flat_map(|x| encoder_decoder.encode(x, &mut tokenizer))
+                .collect::<Vec<_>>(),
+        );
         initial_inputs
     }
 
@@ -111,29 +117,43 @@ impl FuzzerConfig for NautilusConfig {
         (vec![], TokenInputEncoderDecoder::new())
     }
 
-    fn run_harness<'a>(init: &'a mut Self::Init, input: &'a Self::Input) -> &'a [u8] {
-        let (ref mut bytes, ref mut encoder_decoder) = init;
-        bytes.clear();
-        encoder_decoder.decode(input, bytes).unwrap();
-        if *bytes.last().unwrap() != 0 {
-            bytes.push(0);
-        }
-        bytes.as_slice()
+    type Executor<'a, OT, S> =
+        NautilusUnparsingExecutor<'a, GenericExecutor<BytesInput, OT, S>, Seeds>;
+
+    fn get_executor<'a, OT: ObserversTuple<BytesInput, S>, S>(
+        init: &'a mut Self::Init,
+        stdout_observer: libafl::observers::StdOutObserver,
+        stderr_observer: libafl::observers::StdErrObserver,
+        observers: OT,
+        shmem_description: libafl_bolts::shmem::ShMemDescription,
+    ) -> Result<Self::Executor<'a, OT, S>, Error> {
+        let inner = get_executor(
+            stdout_observer,
+            stderr_observer,
+            observers,
+            shmem_description,
+        )?;
+        Ok(NautilusUnparsingExecutor::new(init, inner))
     }
 }
 
-pub struct NautilusUnparsingExecutor<'a, E> {
-    init: &'a mut <NautilusConfig as FuzzerConfig>::Init,
+#[allow(unused)]
+pub struct NautilusUnparsingExecutor<'a, E, Seeds: SeedsConfig> {
+    init: &'a mut <NautilusConfig<Seeds> as FuzzerConfig<Seeds>>::Init,
     inner: E,
 }
 
-impl<'a, E> NautilusUnparsingExecutor<'a, E> {
-    pub fn new(init: &'a mut <NautilusConfig as FuzzerConfig>::Init, inner: E) -> Self {
+impl<'a, E, Seeds: SeedsConfig> NautilusUnparsingExecutor<'a, E, Seeds> {
+    #[allow(unused)]
+    pub fn new(
+        init: &'a mut <NautilusConfig<Seeds> as FuzzerConfig<Seeds>>::Init,
+        inner: E,
+    ) -> Self {
         Self { init, inner }
     }
 }
 
-impl<'a, E> HasObservers for NautilusUnparsingExecutor<'a, E>
+impl<'a, E, Seeds: SeedsConfig> HasObservers for NautilusUnparsingExecutor<'a, E, Seeds>
 where
     E: HasObservers,
 {
@@ -148,7 +168,8 @@ where
     }
 }
 
-impl<'a, E, EM, S, Z> Executor<EM, EncodedInput, S, Z> for NautilusUnparsingExecutor<'a, E>
+impl<'a, E, EM, S, Z, Seeds: SeedsConfig> Executor<EM, EncodedInput, S, Z>
+    for NautilusUnparsingExecutor<'a, E, Seeds>
 where
     E: Executor<EM, BytesInput, S, Z>,
 {
@@ -159,7 +180,14 @@ where
         mgr: &mut EM,
         input: &EncodedInput,
     ) -> Result<libafl::executors::ExitKind, libafl::Error> {
-        let unparsed_input = NautilusConfig::run_harness(self.init, input);
+        let (ref mut bytes, ref mut encoder_decoder) = self.init;
+        bytes.clear();
+        encoder_decoder.decode(input, bytes).unwrap();
+        if *bytes.last().unwrap() != 0 {
+            bytes.push(0);
+        }
+
+        let unparsed_input = bytes.as_slice();
         self.inner.run_target(
             fuzzer,
             state,

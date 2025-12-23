@@ -2,13 +2,9 @@
 members = ["src/get_guard_num", "src/setup_guard_redirection"]
 
 [package]
-name = "libafl_nautilus_fuzzer"
+name = "fuzzer_correctness_on_clang"
 version = "0.2.0"
-authors = [
-    "Valentin Huber <contact@valentinhuber.me>",
-    "Andrea Fioraldi <andreafioraldi@gmail.com>",
-    "Dominik Maier <domenukk@gmail.com>",
-]
+authors = ["Valentin Huber <contact@valentinhuber.me>"]
 edition = "2021"
 
 [features]

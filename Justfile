@@ -2,6 +2,7 @@ COVERAGE_FILE := "target/release/coverage.o"
 
 [unix]
 coverage_collector:
+    mkdir -p $(dirname {{COVERAGE_FILE}})
     clang -c -o {{COVERAGE_FILE}} coverage.c
 
 [unix]
@@ -21,7 +22,7 @@ source:
     fi
 
 [unix]
-build: source coverage_collector
+build: coverage_collector source
     cd llvm && \
     mkdir -p build && cd build && \
     cmake -GNinja -DCMAKE_BUILD_TYPE=Release ../llvm \
@@ -40,9 +41,9 @@ fuzzer:
     cargo build --release
 
 run: fuzzer build preloads
-    ./target/release/libafl_nautilus_fuzzer \
-    --grammar-file c.fan
+    ./target/release/fuzzer_correctness_on_clang \
+    --grammar-file-prefix c
 
 run_fast: fuzzer preloads
-    ./target/release/libafl_nautilus_fuzzer \
-    --grammar-file c.fan
+    ./target/release/fuzzer_correctness_on_clang \
+    --grammar-file-prefix c

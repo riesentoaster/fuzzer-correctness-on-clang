@@ -4,9 +4,6 @@ use libafl::observers::Observer;
 use libafl_bolts::Named;
 use serde::{Deserialize, Serialize};
 
-#[no_mangle]
-pub static mut __afl_correctness_step: usize = 0;
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CorrectnessObserver {
     #[serde(skip)]
@@ -20,15 +17,6 @@ impl CorrectnessObserver {
     pub fn new(step_ptr: &mut [u8], name: String) -> Self {
         Self {
             step_ptr: step_ptr.as_mut_ptr().cast(),
-            step: 0,
-            name: Cow::Owned(name),
-        }
-    }
-
-    pub fn new_global(name: String) -> Self {
-        let ptr = &raw mut __afl_correctness_step;
-        Self {
-            step_ptr: ptr,
             step: 0,
             name: Cow::Owned(name),
         }

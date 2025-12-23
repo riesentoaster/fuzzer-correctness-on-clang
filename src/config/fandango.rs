@@ -1,29 +1,24 @@
-use std::num::NonZero;
+use std::{marker::PhantomData, num::NonZero};
 
 use libafl::{
-    generators::Generator as _,
-    inputs::{BytesInput, HasMutatorBytes},
-    nonzero,
-    schedulers::QueueScheduler,
-    state::NopState,
+    inputs::BytesInput, nonzero, observers::ObserversTuple, schedulers::QueueScheduler, Error,
 };
-use libafl_fandango_pyo3::{
-    fandango::FandangoPythonModule,
-    libafl::{FandangoGenerator, FandangoPseudoMutator},
-};
+use libafl_fandango_pyo3::{fandango::FandangoPythonModule, libafl::FandangoPseudoMutator};
 
 use crate::{
-    config::{read_corpus, FuzzerConfig},
-    NUM_GENERATED,
+    config::{seeds::SeedsConfig, FuzzerConfig},
+    executor::{get_executor, GenericExecutor},
 };
 
-pub struct FandangoConfig;
+pub struct FandangoConfig<Seeds: SeedsConfig>(PhantomData<Seeds>);
 
-impl FuzzerConfig for FandangoConfig {
+impl<Seeds: SeedsConfig> FuzzerConfig<Seeds> for FandangoConfig<Seeds> {
     type Mutator = FandangoPseudoMutator;
 
     fn mutator(opt: &crate::Opt) -> Self::Mutator {
-        let module = FandangoPythonModule::new(opt.grammar_file.to_str().unwrap(), &[]).unwrap();
+        let module =
+            FandangoPythonModule::new(format!("{}.fan", opt.grammar_file_prefix).as_str(), &[])
+                .unwrap();
         FandangoPseudoMutator::new(module)
     }
 
@@ -39,36 +34,38 @@ impl FuzzerConfig for FandangoConfig {
 
     type Input = BytesInput;
 
-    fn initial_inputs(_init: &mut Self::Init, opt: &crate::Opt) -> Vec<Self::Input> {
-        let module = FandangoPythonModule::new(opt.grammar_file.to_str().unwrap(), &[]).unwrap();
-        let mut generator = FandangoGenerator::new(module);
+    fn initial_inputs(_init: &mut Self::Init, _opt: &crate::Opt) -> Vec<Self::Input> {
         let mut inputs = vec![];
-        // inputs.extend((0..NUM_GENERATED).map(|_i| {
-        //     generator
-        //         .generate(&mut NopState::<BytesInput>::new())
-        //         .unwrap()
-        // }));
         inputs.extend_from_slice(
-            &read_corpus()
+            &Seeds::get_seeds()
                 .iter()
                 .map(|x| BytesInput::new(x.clone()))
                 .collect::<Vec<_>>(),
         );
-        // inputs.push(BytesInput::new(vec![]));
+        if inputs.is_empty() {
+            inputs.push(BytesInput::new(vec![]));
+        }
         inputs
-        // vec![
-        //     BytesInput::new(b"int main() { return 0; }".to_vec()),
-        //     BytesInput::new(b";some_invalid_c_program with_more_stuff\";".to_vec()),
-        //     BytesInput::new(b";some_invalid_c_program with_more_stuff\";".to_vec()),
-        //     BytesInput::new(b";some_invalid_c_program with_more_stuff\";".to_vec()),
-        // ]
     }
 
     type Init = ();
 
     fn init() -> Self::Init {}
 
-    fn run_harness<'a>(_harness_setup: &'a mut Self::Init, input: &'a Self::Input) -> &'a [u8] {
-        input.mutator_bytes()
+    type Executor<'a, OT, S> = GenericExecutor<BytesInput, OT, S>;
+
+    fn get_executor<'a, OT: ObserversTuple<BytesInput, S>, S>(
+        _init: &'a mut Self::Init,
+        stdout_observer: libafl::observers::StdOutObserver,
+        stderr_observer: libafl::observers::StdErrObserver,
+        observers: OT,
+        shmem_description: libafl_bolts::shmem::ShMemDescription,
+    ) -> Result<Self::Executor<'a, OT, S>, Error> {
+        get_executor(
+            stdout_observer,
+            stderr_observer,
+            observers,
+            shmem_description,
+        )
     }
 }
