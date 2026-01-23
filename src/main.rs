@@ -1,7 +1,5 @@
-//! A libfuzzer-like fuzzer with llmp-multithreading support and restarts
-//! The example harness is built for libpng.
-//! This will fuzz javascript.
-
+#![feature(iter_intersperse)]
+#[macro_use]
 mod config;
 mod executor;
 mod feedback;
@@ -23,11 +21,12 @@ use libafl::{
     },
     fuzzer::{Evaluator, Fuzzer},
     monitors::{MultiMonitor, OnDiskJsonMonitor},
+    mutators::{havoc_mutations, havoc_mutations_no_crossover, HavocScheduledMutator},
     observers::{
         CanTrack, HitcountsMapObserver, StdErrObserver, StdMapObserver, StdOutObserver,
         TimeObserver,
     },
-    stages::mutational::StdMutationalStage,
+    stages::StdMutationalStage,
     state::StdState,
     BloomInputFilter, Error, ReportingInputFilter, StdFuzzer,
 };
@@ -36,14 +35,17 @@ use libafl_bolts::{
     current_nanos,
     rands::StdRand,
     shmem::{MmapShMemProvider, ShMem as _, ShMemProvider, StdShMemProvider},
-    tuples::tuple_list,
+    tuples::{tuple_list, Merge},
     AsSliceMut as _,
 };
 
 use observer::CorrectnessObserver;
 
 use crate::{
-    config::{seeds::ValidCorpusSeedsConfig, FuzzerConfig},
+    config::{
+        seeds::{NoSeedsConfig, SeedsConfig, ValidCorpusSeedsConfig},
+        FuzzerConfig,
+    },
     executor::get_coverage_shmem_size,
     feedback::ReportCorrectnessFeedback,
 };
@@ -115,8 +117,6 @@ static TARGET_BINARY: &str = "./llvm/build/bin/clang";
 
 const NUM_GENERATED: usize = 4096;
 const CORPUS_CACHE: usize = 4096;
-
-type CurrentConfig = config::FandangoConfig<ValidCorpusSeedsConfig>;
 
 #[allow(clippy::too_many_lines)]
 pub fn main() {
@@ -226,27 +226,6 @@ pub fn main() {
             .objective(objective)
             .build();
 
-        // // The wrapped harness function, calling out to the LLVM-style harness
-        // let mut harness = |input: &<CurrentConfig as FuzzerConfig>::Input| {
-        //     let bytes = CurrentConfig::run_harness(&mut init, input);
-
-        //     //unsafe {
-        //     //println!(">>> {}", std::str::from_utf8_unchecked(&bytes));
-        //     //}
-        //     unsafe { libfuzzer_test_one_input(bytes) };
-        //     ExitKind::Ok
-        // };
-
-        // // Create the executor for an in-process function with one observer for edge coverage and one for the execution time
-        // let mut executor = InProcessExecutor::with_timeout(
-        //     &mut harness,
-        //     tuple_list!(edges_observer, time_observer, correctness_observer),
-        //     &mut fuzzer,
-        //     &mut state,
-        //     &mut restarting_mgr,
-        //     opt.timeout,
-        // )?;
-
         let mut executor = CurrentConfig::get_executor(
             &mut init,
             stdout_observer,
@@ -254,15 +233,6 @@ pub fn main() {
             tuple_list!(edges_observer, time_observer, correctness_observer),
             shmem_description,
         )?;
-
-        // let mut executor = NautilusUnparsingExecutor::new(&mut init, executor);
-
-        // The actual target run starts here.
-        // Call LLVMFUzzerInitialize() if present.
-        // let args: Vec<String> = env::args().collect();
-        // if unsafe { libfuzzer_initialize(&args) } == -1 {
-        //     println!("Warning: LLVMFuzzerInitialize failed with -1");
-        // }
 
         // In case the corpus is empty (on first run), reset
         if state.must_load_initial_inputs() {
@@ -279,15 +249,14 @@ pub fn main() {
             }
         }
 
-        // Setup a basic mutator with a mutational stage
-        let mut stages = tuple_list!(
-            StdMutationalStage::with_max_iterations(
-                CurrentConfig::mutator(&opt),
-                CurrentConfig::max_iterations()
-            ),
-            // StdMutationalStage::new(HavocScheduledMutator::new(havoc_mutations())) // StdMutationalStage::new(NopMutator::new(libafl::mutators::MutationResult::Mutated))
-        );
-
+        type CurrentConfig = config::FandangoConfig<ValidCorpusSeedsConfig>;
+        // let mut stages = setup_nautilus_stages!(&opt);
+        // let havoc = HavocScheduledMutator::new(havoc_mutations_no_crossover());
+        // let mut stages = setup_fandango_stages!(&opt, havoc, 0, 0);
+        let mut stages = tuple_list!(StdMutationalStage::new(HavocScheduledMutator::new(
+            havoc_mutations()
+        )),);
+        // .merge(stages);
         println!("Let's fuzz!");
         fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut restarting_mgr)?;
         restarting_mgr.on_restart(&mut state)

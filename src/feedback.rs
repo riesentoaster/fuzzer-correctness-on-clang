@@ -1,4 +1,4 @@
-use std::{borrow::Cow, marker::PhantomData};
+use std::{borrow::Cow, collections::BTreeMap, marker::PhantomData};
 
 use libafl::{
     events::{Event, EventFirer, EventWithStats},
@@ -29,15 +29,15 @@ impl ReportCorrectnessFeedback {
 
 #[derive(Debug, Serialize, Deserialize, SerdeAny)]
 struct CorrectnessMetadata {
-    counts: Vec<usize>,
+    counts: BTreeMap<usize, usize>,
+    inter_report_count: usize,
 }
-
-static MAX_CORRECTNESS_STEPS: usize = 1 << 10;
 
 impl CorrectnessMetadata {
     pub fn new() -> Self {
         Self {
-            counts: vec![0; MAX_CORRECTNESS_STEPS + 1],
+            counts: BTreeMap::new(),
+            inter_report_count: 0,
         }
     }
 }
@@ -48,50 +48,82 @@ where
     S: HasExecutions + HasNamedMetadata,
     OT: MatchName,
 {
-    fn append_metadata(
+    fn is_interesting(
         &mut self,
         state: &mut S,
         manager: &mut EM,
+        _input: &I,
         observers: &OT,
-        _testcase: &mut libafl::corpus::Testcase<I>,
-    ) -> Result<(), libafl::Error> {
+        _exit_kind: &libafl::executors::ExitKind,
+    ) -> Result<bool, Error> {
         let observer = observers.get(&self.observer).ok_or_else(|| {
             Error::illegal_state(format!("Observer {} not found", self.observer.name()))
         })?;
         let metadata = state.named_metadata_or_insert_with(self.name(), CorrectnessMetadata::new);
-        let step = observer.step();
-        if step == 0 || step > MAX_CORRECTNESS_STEPS {
-            // Skip if step is invalid
-            // return Err(Error::illegal_state(format!(
-            //     "Step {} is out of bounds",
-            //     step
-            // )));
-        }
-        metadata.counts[step] += 1;
-        let total_hits = metadata.counts.iter().sum::<usize>();
-        let stringified = metadata
+        let failure_step = observer.step();
+
+        metadata
+            .counts
+            .entry(failure_step)
+            .and_modify(|f| *f += 1)
+            .or_insert(1);
+
+        metadata.inter_report_count += 1;
+
+        let report_relative = metadata.inter_report_count % 100 == 0;
+        let report_absolute = (metadata.inter_report_count + 50) % 100 == 0;
+
+        let total_hits = if report_relative {
+            metadata.counts.values().sum::<usize>()
+        } else {
+            0
+        };
+
+        let stringified_relative = metadata
             .counts
             .iter()
-            .enumerate()
-            .filter(|(_, c)| **c > 0)
-            .map(|(i, c)| format!("{}: {:.3}", i, *c as f64 / total_hits as f64))
-            .collect::<Vec<String>>()
-            .join(", ");
-        manager.fire(
-            state,
-            EventWithStats::with_current_time(
-                Event::UpdateUserStats {
-                    name: self.name().clone(),
-                    value: UserStats::new(
-                        UserStatsValue::String(Cow::Owned(stringified)),
-                        AggregatorOps::Avg,
-                    ),
-                    phantom: PhantomData,
-                },
-                *state.executions(),
-            ),
-        )?;
-        Ok(())
+            .map(|(k, v)| format!("{}: {:.3}", k, *v as f64 / total_hits as f64))
+            .intersperse(", ".to_string())
+            .collect::<String>();
+        let stringified_absolute = metadata
+            .counts
+            .iter()
+            .map(|(k, v)| format!("{}: {}", k, v))
+            .intersperse(", ".to_string())
+            .collect::<String>();
+        if report_relative {
+            manager.fire(
+                state,
+                EventWithStats::with_current_time(
+                    Event::UpdateUserStats {
+                        name: Cow::Owned(format!("{}-relative", self.name())),
+                        value: UserStats::new(
+                            UserStatsValue::String(Cow::Owned(stringified_relative)),
+                            AggregatorOps::Avg,
+                        ),
+                        phantom: PhantomData,
+                    },
+                    *state.executions(),
+                ),
+            )?;
+        }
+        if report_absolute {
+            manager.fire(
+                state,
+                EventWithStats::with_current_time(
+                    Event::UpdateUserStats {
+                        name: Cow::Owned(format!("{}-absolute", self.name())),
+                        value: UserStats::new(
+                            UserStatsValue::String(Cow::Owned(stringified_absolute)),
+                            AggregatorOps::Avg,
+                        ),
+                        phantom: PhantomData,
+                    },
+                    *state.executions(),
+                ),
+            )?;
+        }
+        Ok(false)
     }
 }
 

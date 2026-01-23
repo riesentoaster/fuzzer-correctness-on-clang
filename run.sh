@@ -1,6 +1,6 @@
 export PYTHONPATH=$(echo .venv/lib/python*/site-packages)
 
-./target/release/libafl_nautilus_fuzzer \
+./target/release/fuzzer_correctness_on_clang \
 	--grammar-file-prefix c \
 	--output "out/$F_OUT_DIR" \
 	--stdout-file /dev/null \

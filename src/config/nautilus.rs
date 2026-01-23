@@ -1,4 +1,4 @@
-use std::{fs, marker::PhantomData, num::NonZero};
+use std::{fs, marker::PhantomData};
 
 use libafl::{
     executors::{Executor, HasObservers},
@@ -8,14 +8,12 @@ use libafl::{
         NautilusInput, TokenInputEncoderDecoder,
     },
     mutators::{
-        encoded_mutations, EncodedAddMutator, EncodedCopyMutator, EncodedCrossoverInsertMutator,
+        EncodedAddMutator, EncodedCopyMutator, EncodedCrossoverInsertMutator,
         EncodedCrossoverReplaceMutator, EncodedDecMutator, EncodedDeleteMutator, EncodedIncMutator,
-        EncodedInsertCopyMutator, EncodedRandMutator, HavocScheduledMutator,
+        EncodedInsertCopyMutator, EncodedRandMutator,
     },
-    nonzero,
     observers::ObserversTuple,
     schedulers::{IndexesLenTimeMinimizerScheduler, QueueScheduler},
-    stages::mutational::DEFAULT_MUTATIONAL_MAX_ITERATIONS,
     state::NopState,
     Error,
 };
@@ -51,16 +49,6 @@ type SchedulerObserver<'a> = libafl::observers::ExplicitTracking<
 >;
 
 impl<Seeds: SeedsConfig> FuzzerConfig<Seeds> for NautilusConfig<Seeds> {
-    type Mutator = HavocScheduledMutator<EncodedMutations>;
-
-    fn mutator(_opt: &crate::Opt) -> Self::Mutator {
-        HavocScheduledMutator::with_max_stack_pow(encoded_mutations(), 2)
-    }
-
-    fn max_iterations() -> NonZero<usize> {
-        nonzero!(DEFAULT_MUTATIONAL_MAX_ITERATIONS)
-    }
-
     type Scheduler<'a> = libafl::schedulers::MinimizerScheduler<
         QueueScheduler,
         libafl::schedulers::LenTimeMulTestcasePenalty,
@@ -195,4 +183,16 @@ where
             &BytesInput::new(unparsed_input.to_vec()),
         )
     }
+}
+
+#[allow(unused_macros)]
+macro_rules! setup_nautilus_stages {
+    ($opt:expr) => {
+        tuple_list!(libafl::stages::mutational::StdMutationalStage::new(
+            libafl::mutators::HavocScheduledMutator::with_max_stack_pow(
+                libafl::mutators::encoded_mutations(),
+                2
+            )
+        ))
+    };
 }

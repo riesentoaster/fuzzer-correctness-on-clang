@@ -1,6 +1,6 @@
-use std::num::NonZero;
-
+#[macro_use]
 pub mod fandango;
+#[macro_use]
 pub mod nautilus;
 pub mod seeds;
 
@@ -23,13 +23,10 @@ pub type SchedulerObserver<'a> = libafl::observers::ExplicitTracking<
 >;
 
 pub trait FuzzerConfig<Seeds: SeedsConfig> {
-    type Mutator;
     type Scheduler<'a>;
     type Input;
     type Init;
     type Executor<'a, OT, S>;
-    fn mutator(opt: &Opt) -> Self::Mutator;
-    fn max_iterations() -> NonZero<usize>;
     fn scheduler<'a>(observer: &SchedulerObserver<'a>) -> Self::Scheduler<'a>;
     fn initial_inputs(init: &mut Self::Init, opt: &Opt) -> Vec<Self::Input>;
     fn init() -> Self::Init;

@@ -1,31 +1,16 @@
-use std::{marker::PhantomData, num::NonZero};
+use std::marker::PhantomData;
 
-use libafl::{
-    inputs::BytesInput, nonzero, observers::ObserversTuple, schedulers::QueueScheduler, Error,
-};
-use libafl_fandango_pyo3::{fandango::FandangoPythonModule, libafl::FandangoPseudoMutator};
+use libafl::{inputs::BytesInput, observers::ObserversTuple, schedulers::QueueScheduler, Error};
 
 use crate::{
     config::{seeds::SeedsConfig, FuzzerConfig},
     executor::{get_executor, GenericExecutor},
 };
 
+#[allow(unused)]
 pub struct FandangoConfig<Seeds: SeedsConfig>(PhantomData<Seeds>);
 
 impl<Seeds: SeedsConfig> FuzzerConfig<Seeds> for FandangoConfig<Seeds> {
-    type Mutator = FandangoPseudoMutator;
-
-    fn mutator(opt: &crate::Opt) -> Self::Mutator {
-        let module =
-            FandangoPythonModule::new(format!("{}.fan", opt.grammar_file_prefix).as_str(), &[])
-                .unwrap();
-        FandangoPseudoMutator::new(module)
-    }
-
-    fn max_iterations() -> NonZero<usize> {
-        nonzero!(1)
-    }
-
     type Scheduler<'a> = QueueScheduler;
 
     fn scheduler<'a>(_observer: &super::SchedulerObserver<'a>) -> Self::Scheduler<'a> {
@@ -68,4 +53,20 @@ impl<Seeds: SeedsConfig> FuzzerConfig<Seeds> for FandangoConfig<Seeds> {
             shmem_description,
         )
     }
+}
+
+#[allow(unused_macros)]
+macro_rules! setup_fandango_stages {
+    ($opt:expr, $inner:expr, $min:expr, $max:expr) => {{
+        let module = libafl_fandango_pyo3::fandango::FandangoPythonModule::new(
+            &format!("{}.fan", $opt.grammar_file_prefix),
+            &[],
+        )
+        .unwrap();
+        tuple_list!(
+            libafl_fandango_pyo3::libafl::FandangoPostMutationalStage::new(
+                module, $inner, $min, $max
+            )
+        )
+    }};
 }
