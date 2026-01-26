@@ -10,7 +10,7 @@ use core::time::Duration;
 use std::{borrow::Cow, env, fs, net::SocketAddr, path::PathBuf};
 
 use libafl::{
-    corpus::{CachedOnDiskCorpus, OnDiskCorpus},
+    corpus::{InMemoryCorpus, OnDiskCorpus},
     events::{
         ClientDescription, EventConfig, EventRestarter, Launcher, LlmpRestartingEventManager,
     },
@@ -116,7 +116,6 @@ pub struct Opt {
 static TARGET_BINARY: &str = "./llvm/build/bin/clang";
 
 const NUM_GENERATED: usize = 4096;
-const CORPUS_CACHE: usize = 4096;
 
 #[allow(clippy::too_many_lines)]
 pub fn main() {
@@ -141,12 +140,6 @@ pub fn main() {
                           core_id: ClientDescription| {
         let mut objective_dir = opt.output.clone();
         objective_dir.push("crashes");
-        let mut corpus_dir = opt.output.clone();
-        corpus_dir.push(format!(
-            "corpus_{}_{}",
-            core_id.core_id().0,
-            core_id.overcommit_id()
-        ));
 
         #[allow(clippy::let_unit_value)]
         let mut init = CurrentConfig::init();
@@ -205,7 +198,7 @@ pub fn main() {
                 // RNG
                 StdRand::with_seed(current_nanos()),
                 // Corpus that will be evolved, we keep it in memory for performance
-                CachedOnDiskCorpus::new(corpus_dir, CORPUS_CACHE).unwrap(),
+                InMemoryCorpus::new(),
                 // Corpus in which we store solutions (crashes in this example),
                 // on disk so the user can get them after stopping the fuzzer
                 OnDiskCorpus::new(objective_dir).unwrap(),
