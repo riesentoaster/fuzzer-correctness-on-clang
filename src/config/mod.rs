@@ -36,5 +36,7 @@ pub trait FuzzerConfig<Seeds: SeedsConfig> {
         stderr_observer: StdErrObserver,
         observers: OT,
         shmem_description: ShMemDescription,
+        redirection_shared_library: &str,
+        target_binary: &str,
     ) -> Result<Self::Executor<'a, OT, S>, Error>;
 }

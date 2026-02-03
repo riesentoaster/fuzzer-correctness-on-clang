@@ -1,0 +1,274 @@
+@article{Fandango,
+  author     = {Zamudio Amaya, Jos\'{e} Antonio and Smytzek, Marius and Zeller, Andreas},
+  title      = {FANDANGO: Evolving Language-Based Testing},
+  year       = {2025},
+  issue_date = {July 2025},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {2},
+  number     = {ISSTA},
+  url        = {https://doi.org/10.1145/3728915},
+  doi        = {10.1145/3728915},
+  abstract   = {Language-based fuzzers leverage formal input specifications (languages) to generate arbitrarily large and diverse sets of valid inputs for a program under test. Modern language-based test generators combine grammars and constraints to satisfy syntactic and semantic input constraints. ISLA, the leading input generator in that space, uses symbolic constraint solving to solve input constraints. Using solvers places ISLA among the most precise fuzzers but also makes it slow.    In this paper, we explore search-based testing as an alternative to symbolic constraint solving. We employ a genetic algorithm that iteratively generates candidate inputs from an input specification, evaluates them against defined constraints, evolving a population of inputs through syntactically valid mutations and retaining those with superior fitness until the semantic input constraints are met. This evolutionary procedure, analogous to natural genetic evolution, leads to progressively improved inputs that cover both semantics and syntax. This change boosts the efficiency of language-based testing: In our experiments, compared to ISLA, our search-based FANDANGO prototype is faster by one to three orders of magnitude without sacrificing precision.    The search-based approach no longer restricts constraints to constraint solvers' (miniature) languages. In FANDANGO, constraints can use the whole Python language and library. This expressiveness gives testers unprecedented flexibility in shaping test inputs. It allows them to state arbitrary goals for test generation: ''Please produce 1,000 valid test inputs where the voltage field follows a Gaussian distribution but never exceeds 20 mV.''},
+  journal    = {Proc. ACM Softw. Eng.},
+  month      = jun,
+  articleno  = {ISSTA040},
+  numpages   = {23},
+  keywords   = {Language-based testing, fuzzing, test generation}
+}
+
+@article{UNIX,
+  author     = {Miller, Barton P. and Fredriksen, Lars and So, Bryan},
+  title      = {{An Empirical Study of the Reliability of UNIX Utilities}},
+  year       = {1990},
+  issue_date = {Dec. 1990},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {33},
+  number     = {12},
+  issn       = {0001-0782},
+  url        = {https://doi.org/10.1145/96267.96279},
+  doi        = {10.1145/96267.96279},
+  abstract   = {The following section describes the tools we built to test the utilities. These tools include the fuzz (random character) generator, ptyjig (to test interactive utilities), and scripts to automate the testing process. Next, we will describe the tests we performed, giving the types of input we presented to the utilities. Results from the tests will follow along with an analysis of the results, including identification and classification of the program bugs that caused the crashes. The final section presents concluding remarks, including suggestions for avoiding the types of problems detected by our study and some commentary on the bugs we found. We include an Appendix with the user manual pages for fuzz and ptyjig.},
+  journal    = {Commun. ACM},
+  month      = {12},
+  pages      = {32–44},
+  numpages   = {13}
+}
+
+
+@inproceedings{Nautilus,
+  author    = {Aschermann, Cornelius and Frassetto, Tommaso and Holz, Thorsten and Jauernig, Patrick and Sadeghi, Ahmad-Reza and Teuchert, Daniel},
+  title     = {NAUTILUS: Fishing for Deep Bugs with Grammars},
+  journal   = {NDSS Symposium},
+  booktitle = {NDSS},
+  volume    = {19},
+  pages     = {337},
+  year      = {2019},
+  month     = {01},
+  url       = {https://www.ndss-symposium.org/ndss-paper/nautilus-fishing-for-deep-bugs-with-grammars/},
+  doi       = {10.14722/ndss.2019.23412}
+}
+
+@article{GrammarMutation,
+  author     = {Bendrissou, Bachir and Cadar, Cristian and Donaldson, Alastair F.},
+  title      = {Grammar Mutation for Testing Input Parsers},
+  year       = {2025},
+  issue_date = {May 2025},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {34},
+  number     = {4},
+  issn       = {1049-331X},
+  url        = {https://doi.org/10.1145/3708517},
+  doi        = {10.1145/3708517},
+  abstract   = {Grammar-based fuzzing is an effective method for testing programs that consume structured inputs, particularly input parsers. However, if the available grammar does not accurately represent the input format, or if the system under test (SUT) does not conform strictly to the grammar, there may be an impedance mismatch between inputs generated via grammars and inputs accepted by the SUT. Even if the SUT has been designed to strictly conform to the grammar, the SUT parser may exhibit vulnerabilities that would only be triggered by slightly invalid inputs. Grammar-based generation, by construction, will not yield such edge case inputs. To overcome these limitations, we present two mutational-based approaches: Gmutator and G+M. Both approaches are built upon Grammarinator, a grammar-based generator. Gmutator applies mutations to the grammar input of Grammarinator, while G+M directly applies byte-level mutations to Grammarinator -generated inputs. To evaluate the effectiveness of these techniques (Grammarinator, Gmutator, G+M) in testing programs that parse various input formats, we conducted an experimental evaluation over four different input formats and twelve SUTs (three per input format). Our findings suggest that both Gmutator and G+M excel in generating edge case inputs, facilitating the detection of disparities between input specifications and parser implementations.},
+  journal    = {ACM Trans. Softw. Eng. Methodol.},
+  month      = apr,
+  articleno  = {116},
+  numpages   = {21},
+  keywords   = {Grammar-based fuzzing, mutant grammars, input parsers}
+}
+
+@inproceedings{DistanceLessThanCubic,
+  author    = {Rajasekaran, Sanguthevar
+               and Nicolae, Marius},
+  editor    = {Dediu, Adrian-Horia
+               and Janou{\v{s}}ek, Jan
+               and Mart{\'i}n-Vide, Carlos
+               and Truthe, Bianca},
+  title     = {An Error Correcting Parser for Context Free Grammars that Takes Less Than Cubic Time},
+  booktitle = {Language and Automata Theory and Applications},
+  year      = {2016},
+  publisher = {Springer International Publishing},
+  address   = {Cham},
+  pages     = {533--546},
+  abstract  = {The problem of parsing has been studied extensively for various formal grammars. Given an input string and a grammar, the parsing problem is to check if the input string belongs to the language generated by the grammar. A closely related problem of great importance is one where the input are a string {\$}{\$}{\backslash}mathcal{\{}I{\}}{\$}{\$}Iand a grammar G and the task is to produce a string {\$}{\$}{\backslash}mathcal{\{}I{\}}'{\$}{\$}I{\textasciiacutex}that belongs to the language generated by G and the `distance' between {\$}{\$}{\backslash}mathcal{\{}I{\}}{\$}{\$}Iand {\$}{\$}{\backslash}mathcal{\{}I{\}}'{\$}{\$}I{\textasciiacutex}is the smallest (from among all the strings in the language). Specifically, if {\$}{\$}{\backslash}mathcal{\{}I{\}}{\$}{\$}Iis in the language generated by G, then the output should be {\$}{\$}{\backslash}mathcal{\{}I{\}}{\$}{\$}I. Any parser that solves this version of the problem is called an error correcting parser. In 1972 Aho and Peterson presented a cubic time error correcting parser for context free grammars. Since then this asymptotic time bound has not been improved under the assumption that the grammar size is a constant. In this paper we present an error correcting parser for context free grammars that runs in O(T(n)) time, where n is the length of the input string and T(n) is the time needed to compute the tropical product of two {\$}{\$}n{\backslash}times n{\$}{\$}n{\texttimes}nmatrices.},
+  isbn      = {978-3-319-30000-9}
+}
+
+@article{DistanceInitial,
+  author   = {Aho, Alfred V. and Peterson, Thomas G.},
+  title    = {A Minimum Distance Error-Correcting Parser for Context-Free Languages},
+  journal  = {SIAM Journal on Computing},
+  volume   = {1},
+  number   = {4},
+  pages    = {305-312},
+  year     = {1972},
+  doi      = {10.1137/0201022},
+  url      = {https://doi.org/10.1137/0201022},
+  eprint   = {https://doi.org/10.1137/0201022},
+  abstract = { We assume three types of syntax errors can debase the sentences of a language generated by a context-free grammar: the replacement of a symbol by an incorrect symbol, the insertion of an extraneous symbol, or the deletion of a symbol. We present an algorithm that will parse any input string to completion finding the fewest possible number of errors. On a random access computer the algorithm requires time proportional to the cube of the length of the input. }
+}
+
+
+@inproceedings{AFLPlusPlus,
+  author    = {Andrea Fioraldi and Dominik Maier and Heiko Ei{\ss}feldt and Marc Heuse},
+  title     = {{AFL++}: Combining Incremental Steps of Fuzzing Research},
+  booktitle = {14th {USENIX} Workshop on Offensive Technologies ({WOOT} 20)},
+  year      = {2020},
+  publisher = {{USENIX} Association},
+  month     = aug
+}
+
+@inproceedings{LibAFLQEMU,
+  title       = {{LibAFL QEMU: A Library for Fuzzing-oriented Emulation}},
+  author      = {Malmain, Romain and Fioraldi, Andrea and Francillon, Aur{\'e}lien},
+  url         = {https://hal.science/hal-04500872},
+  booktitle   = {{BAR 2024, Workshop on Binary Analysis Research, colocated with NDSS 2024}},
+  address     = {San Diego (CA), United States},
+  year        = {2024},
+  month       = Mar,
+  pdf         = {https://hal.science/hal-04500872v1/file/bar24_malmain.pdf},
+  hal_id      = {hal-04500872},
+  hal_version = {v1}
+}
+
+@online{gcov,
+  title   = {gcov—a Test Coverage Program},
+  url     = {https://gcc.gnu.org/onlinedocs/gcc/Gcov.html},
+  urldate = {2025-11-12}
+}
+
+
+@online{SanCov,
+  title   = {SanitizerCoverage},
+  url     = {https://clang.llvm.org/docs/SanitizerCoverage.html},
+  urldate = {2025-11-12}
+}
+
+@inproceedings{SOKFuzzingEvaluation,
+  author    = {Schloegel, Moritz and Bars, Nils and Schiller, Nico and Bernhard, Lukas and Scharnowski, Tobias and Crump, Addison and Ale-Ebrahim, Arash and Bissantz, Nicolai and Muench, Marius and Holz, Thorsten},
+  booktitle = {2024 IEEE Symposium on Security and Privacy (SP)},
+  title     = {SoK: Prudent Evaluation Practices for Fuzzing},
+  year      = {2024},
+  volume    = {},
+  number    = {},
+  pages     = {1974-1993},
+  keywords  = {Privacy;Systematics;Computer bugs;Fuzzing;Reproducibility of results;Software;Security;fuzzing;fuzz testing;reproducibility},
+  doi       = {10.1109/SP54263.2024.00137}
+}
+
+
+@inproceedings{RedQueen,
+  title     = {REDQUEEN: Fuzzing with Input-to-State Correspondence},
+  author    = {Aschermann, Cornelius and Schumilo, Sergej and Blazytko, Tim and Gawlik, Robert and Holz, Thorsten},
+  booktitle = {Proceedings of the 2019 Network and Distributed System Security Symposium (NDSS)},
+  volume    = {19},
+  pages     = {1--15},
+  year      = {2019}
+}
+
+@misc{FrameShift,
+  title         = {FrameShift: Learning to Resize Fuzzer Inputs Without Breaking Them},
+  author        = {Harrison Green and Claire Le Goues and Fraser Brown},
+  year          = {2025},
+  eprint        = {2507.05421},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CR},
+  url           = {https://arxiv.org/abs/2507.05421}
+}
+
+@misc{Autarkie,
+  author  = {Aarnav Bos},
+  title   = {Autarkie},
+  url     = {https://github.com/R9295/autarkie/},
+  urldate = {2025-11-12},
+  year    = {2025}
+}
+
+@online{AFL,
+  author = {Michał Zalewski},
+  title  = {American Fuzzy Lop - Whitepaper},
+  url    = {https://lcamtuf.coredump.cx/afl/technical_details.txt}
+}
+
+@article{Demystifying,
+  author     = {Mallissery, Sanoop and Wu, Yu-Sung},
+  title      = {Demystify the Fuzzing Methods: A Comprehensive Survey},
+  year       = {2023},
+  issue_date = {March 2024},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {56},
+  number     = {3},
+  issn       = {0360-0300},
+  url        = {https://doi.org/10.1145/3623375},
+  doi        = {10.1145/3623375},
+  abstract   = {Massive software applications possess complex data structures or parse complex data structures; in such cases, vulnerabilities in the software become inevitable. The vulnerabilities are the source of cyber-security threats, and discovering this before the software deployment is challenging. Fuzzing is a vulnerability discovery solution that resonates with random-mutation, feedback-driven, coverage-guided, constraint-guided, seed-scheduling, and target-oriented strategies. Each technique is wrapped beneath the black-, white-, and grey-box fuzzers to uncover diverse vulnerabilities. It consists of methods such as identifying structural information about the test cases to detect security vulnerabilities, symbolic and concrete program states to explore the unexplored locations, and full semantics of code coverage to create new test cases. We methodically examine each kind of fuzzers and contemporary fuzzers with a profound observation that addresses various research questions and systematically reviews and analyze the gaps and their solutions. Our survey comprised the recent related works on fuzzing techniques to demystify the fuzzing methods concerning the application domains and the target that, in turn, achieves higher code coverage and sound vulnerability detection.},
+  journal    = {ACM Comput. Surv.},
+  month      = oct,
+  articleno  = {71},
+  numpages   = {38},
+  keywords   = {vulnerability discovery, code inspection, fuzzing, Automated testing}
+}
+
+@techreport{SymbexSurvey,
+  author      = {Valentin Huber},
+  title       = {Challenges and Mitigation Strategies in Symbolic Execution Based Fuzzing Through the Lens of Survey Papers},
+  institution = {Zürich University of Applied Sciences ZHAW},
+  year        = {2023}
+}
+
+@inproceedings{Zest,
+  author    = {Padhye, Rohan and Lemieux, Caroline and Sen, Koushik and Papadakis, Mike and Le Traon, Yves},
+  title     = {Semantic fuzzing with zest},
+  year      = {2019},
+  isbn      = {9781450362245},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi.org/10.1145/3293882.3330576},
+  doi       = {10.1145/3293882.3330576},
+  abstract  = {Programs expecting structured inputs often consist of both a syntactic analysis stage, which parses raw input, and a semantic analysis stage, which conducts checks on the parsed input and executes the core logic of the program. Generator-based testing tools in the lineage of QuickCheck are a promising way to generate random syntactically valid test inputs for these programs. We present Zest, a technique which automatically guides QuickCheck-like random input generators to better explore the semantic analysis stage of test programs. Zest converts random-input generators into deterministic parametric input generators. We present the key insight that mutations in the untyped parameter domain map to structural mutations in the input domain. Zest leverages program feedback in the form of code coverage and input validity to perform feedback-directed parameter search. We evaluate Zest against AFL and QuickCheck on five Java programs: Maven, Ant, BCEL, Closure, and Rhino. Zest covers 1.03x-2.81x as many branches within the benchmarks' semantic analysis stages as baseline techniques. Further, we find 10 new bugs in the semantic analysis stages of these benchmarks. Zest is the most effective technique in finding these bugs reliably and quickly, requiring at most 10 minutes on average to find each bug.},
+  booktitle = {Proceedings of the 28th ACM SIGSOFT International Symposium on Software Testing and Analysis},
+  pages     = {329–340},
+  numpages  = {12},
+  keywords  = {random testing, property-based testing, Structure-aware fuzzing},
+  location  = {Beijing, China},
+  series    = {ISSTA 2019}
+}
+
+@article{FuzzFactory,
+  author     = {Padhye, Rohan and Lemieux, Caroline and Sen, Koushik and Simon, Laurent and Vijayakumar, Hayawardh},
+  title      = {FuzzFactory: domain-specific fuzzing with waypoints},
+  year       = {2019},
+  issue_date = {October 2019},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {3},
+  number     = {OOPSLA},
+  url        = {https://doi.org/10.1145/3360600},
+  doi        = {10.1145/3360600},
+  abstract   = {Coverage-guided fuzz testing has gained prominence as a highly effective method of finding security vulnerabilities such as buffer overflows in programs that parse binary data. Recently, researchers have introduced various specializations to the coverage-guided fuzzing algorithm for different domain-specific testing goals, such as finding performance bottlenecks, generating valid inputs, handling magic-byte comparisons, etc. Each such solution can require non-trivial implementation effort and produces a distinct variant of a fuzzing tool. We observe that many of these domain-specific solutions follow a common solution pattern.  In this paper, we present FuzzFactory, a framework for developing domain-specific fuzzing applications without requiring changes to mutation and search heuristics. FuzzFactory allows users to specify the collection of dynamic domain-specific feedback during test execution, as well as how such feedback should be aggregated. FuzzFactory uses this information to selectively save intermediate inputs, called waypoints, to augment coverage-guided fuzzing. Such waypoints always make progress towards domain-specific multi-dimensional objectives. We instantiate six domain-specific fuzzing applications using FuzzFactory: three re-implementations of prior work and three novel solutions, and evaluate their effectiveness on benchmarks from Google's fuzzer test suite. We also show how multiple domains can be composed to perform better than the sum of their parts. For example, we combine domain-specific feedback about strict equality comparisons and dynamic memory allocations, to enable the automatic generation of LZ4 bombs and PNG bombs.},
+  journal    = {Proc. ACM Program. Lang.},
+  month      = oct,
+  articleno  = {174},
+  numpages   = {29},
+  keywords   = {domain-specific fuzzing, frameworks, fuzz testing, waypoints}
+}
+
+@inproceedings{IJON,
+  author    = {Aschermann, Cornelius and Schumilo, Sergej and Abbasi, Ali and Holz, Thorsten},
+  booktitle = {2020 IEEE Symposium on Security and Privacy (SP)},
+  title     = {Ijon: Exploring Deep State Spaces via Fuzzing},
+  year      = {2020},
+  volume    = {},
+  number    = {},
+  pages     = {1597-1612},
+  keywords  = {Fuzzing;Computer bugs;Space exploration;Software;Tools;Games;Instruments},
+  doi       = {10.1109/SP40000.2020.00117}
+}
+
+@techreport{coreutils,
+  author      = {Valentin Huber},
+  title       = {{Differential Fuzzing on coreutils Using LibAFL}},
+  institution = {Zürich University of Applied Sciences ZHAW},
+  year        = {2024}
+}
+
+@mastersthesis{FTZ,
+  author = {Valentin Huber},
+  school = {Zürich University of Applied Sciences ZHAW},
+  title  = {FTZ: A State-Inferring Fuzzer for the TCP/IP Stack of Zephyr},
+  year   = {2025}
+}

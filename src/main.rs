@@ -19,35 +19,38 @@ use libafl::{
         stdio::{StdErrToMetadataFeedback, StdOutToMetadataFeedback},
         CrashFeedback, MaxMapFeedback, TimeFeedback, TimeoutFeedback,
     },
+    fuzzer::{BloomInputFilter, ReportingInputFilter, StdFuzzer},
     fuzzer::{Evaluator, Fuzzer},
     monitors::{MultiMonitor, OnDiskJsonMonitor},
-    mutators::{havoc_mutations, havoc_mutations_no_crossover, HavocScheduledMutator},
     observers::{
         CanTrack, HitcountsMapObserver, StdErrObserver, StdMapObserver, StdOutObserver,
         TimeObserver,
     },
-    stages::StdMutationalStage,
     state::StdState,
-    BloomInputFilter, Error, ReportingInputFilter, StdFuzzer,
+    Error,
 };
 use libafl_bolts::{
     core_affinity::Cores,
     current_nanos,
     rands::StdRand,
     shmem::{MmapShMemProvider, ShMem as _, ShMemProvider, StdShMemProvider},
-    tuples::{tuple_list, Merge},
+    tuples::tuple_list,
     AsSliceMut as _,
 };
 
-use observer::CorrectnessObserver;
+#[allow(unused_imports)]
+use {
+    crate::config::seeds::{NoSeedsConfig, ValidCorpusSeedsConfig},
+    libafl::{
+        mutators::{havoc_mutations, havoc_mutations_no_crossover, HavocScheduledMutator},
+        stages::StdMutationalStage,
+    },
+    libafl_bolts::tuples::Merge,
+};
 
 use crate::{
-    config::{
-        seeds::{NoSeedsConfig, SeedsConfig, ValidCorpusSeedsConfig},
-        FuzzerConfig,
-    },
-    executor::get_coverage_shmem_size,
-    feedback::ReportCorrectnessFeedback,
+    config::FuzzerConfig, executor::get_coverage_shmem_size, feedback::ReportCorrectnessFeedback,
+    observer::CorrectnessObserver,
 };
 
 /// Parses a millseconds int into a [`Duration`], used for commandline arg parsing
@@ -111,9 +114,25 @@ pub struct Opt {
 
     #[arg(short, long, help = "Set the grammar file", name = "GRAMMAR_FILE")]
     grammar_file_prefix: String,
-}
 
-static TARGET_BINARY: &str = "./llvm/build/bin/clang";
+    #[arg(
+        short,
+        long,
+        help = "Set the target binary",
+        name = "TARGET_BINARY",
+        default_value = "./llvm/build/bin/clang"
+    )]
+    target_binary: PathBuf,
+
+    #[arg(
+        short,
+        long,
+        help = "Set the redirection shared library",
+        name = "REDIRECTION_SHARED_LIBRARY",
+        default_value = "./target/release/libsetup_guard_redirection.so"
+    )]
+    redirection_shared_library: PathBuf,
+}
 
 const NUM_GENERATED: usize = 4096;
 
@@ -145,7 +164,7 @@ pub fn main() {
         let mut init = CurrentConfig::init();
         let initial_inputs = CurrentConfig::initial_inputs(&mut init, &opt);
 
-        let guard_num = get_coverage_shmem_size(TARGET_BINARY)?;
+        let guard_num = get_coverage_shmem_size(opt.target_binary.to_str().unwrap())?;
 
         let mut provider = MmapShMemProvider::default();
         let mut shmem = provider
@@ -225,6 +244,8 @@ pub fn main() {
             stderr_observer,
             tuple_list!(edges_observer, time_observer, correctness_observer),
             shmem_description,
+            opt.redirection_shared_library.to_str().unwrap(),
+            opt.target_binary.to_str().unwrap(),
         )?;
 
         // In case the corpus is empty (on first run), reset
@@ -242,14 +263,15 @@ pub fn main() {
             }
         }
 
-        type CurrentConfig = config::FandangoConfig<ValidCorpusSeedsConfig>;
+        // type CurrentConfig = config::NautilusConfig<ValidCorpusSeedsConfig>;
         // let mut stages = setup_nautilus_stages!(&opt);
-        // let havoc = HavocScheduledMutator::new(havoc_mutations_no_crossover());
-        // let mut stages = setup_fandango_stages!(&opt, havoc, 0, 0);
+        type CurrentConfig = config::FandangoConfig<NoSeedsConfig>;
+        let havoc = HavocScheduledMutator::new(havoc_mutations_no_crossover());
+        let mut stages = setup_fandango_stages!(&opt, havoc, 0, 0);
         let mut stages = tuple_list!(StdMutationalStage::new(HavocScheduledMutator::new(
             havoc_mutations()
-        )),);
-        // .merge(stages);
+        )),)
+        .merge(stages);
         println!("Let's fuzz!");
         fuzzer.fuzz_loop(&mut stages, &mut executor, &mut state, &mut restarting_mgr)?;
         restarting_mgr.on_restart(&mut state)

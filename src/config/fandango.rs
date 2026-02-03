@@ -45,12 +45,16 @@ impl<Seeds: SeedsConfig> FuzzerConfig<Seeds> for FandangoConfig<Seeds> {
         stderr_observer: libafl::observers::StdErrObserver,
         observers: OT,
         shmem_description: libafl_bolts::shmem::ShMemDescription,
+        redirection_shared_library: &str,
+        target_binary: &str,
     ) -> Result<Self::Executor<'a, OT, S>, Error> {
         get_executor(
             stdout_observer,
             stderr_observer,
             observers,
             shmem_description,
+            redirection_shared_library,
+            target_binary,
         )
     }
 }

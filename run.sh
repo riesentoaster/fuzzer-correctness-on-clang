@@ -6,4 +6,6 @@ export PYTHONPATH=$(echo .venv/lib/python*/site-packages)
 	--stdout-file /dev/null \
 	--stderr-file /dev/null \
 	--cores $F_CORES \
-	--broker-port "133$F_PORT"
+	--broker-port "133$F_PORT" \
+	--target-binary "$TARGET_BINARY" \
+	--redirection-shared-library "$REDIRECTION_SHARED_LIBRARY"

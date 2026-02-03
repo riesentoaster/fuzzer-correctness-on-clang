@@ -18,8 +18,6 @@ use libafl_bolts::{
     StdTargetArgs,
 };
 
-use crate::TARGET_BINARY;
-
 pub type GenericExecutor<I, OT, S> = CommandExecutor<
     Child,
     (),
@@ -34,6 +32,8 @@ pub fn get_executor<I: HasTargetBytes, OT: ObserversTuple<I, S>, S>(
     stderr_observer: StdErrObserver,
     observers: OT,
     shmem_description: ShMemDescription,
+    redirection_shared_library: &str,
+    target_binary: &str,
 ) -> Result<GenericExecutor<I, OT, S>, Error> {
     let shmem_description_string = serde_json::to_string(&shmem_description).unwrap();
 
@@ -41,11 +41,8 @@ pub fn get_executor<I: HasTargetBytes, OT: ObserversTuple<I, S>, S>(
     let stderr = stderr_observer.handle();
 
     CommandExecutor::builder()
-        .program(TARGET_BINARY)
-        .env(
-            "LD_PRELOAD",
-            "./target/release/libsetup_guard_redirection.so",
-        )
+        .program(target_binary)
+        .env("LD_PRELOAD", redirection_shared_library)
         .env("SHMEM_DESCRIPTION", shmem_description_string)
         .stdout_observer(stdout.clone())
         .stderr_observer(stderr.clone())
